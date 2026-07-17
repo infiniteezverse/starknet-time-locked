@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useAccount } from '@starknet-react/core';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { StatusBadge } from '@/components/StatusBadge';
 import { MetadataCard } from '@/components/MetadataCard';
@@ -11,9 +10,26 @@ import { WalletConnect } from '@/components/WalletConnect';
 import { useTimeRegistry } from '@/hooks/useTimeRegistry';
 
 export default function Home() {
-  const { isConnected } = useAccount();
+  const [isConnected, setIsConnected] = useState(false);
   const [totalSeconds, setTotalSeconds] = useState(0);
   const { remainingTime, deadline, isExpired, setDeadline, isWritePending } = useTimeRegistry();
+
+  // Check wallet connection state from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const connected = localStorage.getItem('wallet_connected') === 'true';
+      setIsConnected(connected);
+
+      // Listen for storage changes (wallet connect/disconnect)
+      const handleStorageChange = () => {
+        const newConnected = localStorage.getItem('wallet_connected') === 'true';
+        setIsConnected(newConnected);
+      };
+
+      window.addEventListener('storage', handleStorageChange);
+      return () => window.removeEventListener('storage', handleStorageChange);
+    }
+  }, []);
 
   useEffect(() => {
     if (Number(deadline) > 0) {

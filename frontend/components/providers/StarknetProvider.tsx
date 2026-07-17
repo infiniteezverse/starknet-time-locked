@@ -1,17 +1,9 @@
 'use client';
 
-import { StarknetConfig, publicProvider } from '@starknet-react/core';
-import { sepolia } from '@starknet-react/chains';
 import { PropsWithChildren } from 'react';
 
+// Simplified provider - removes StarknetConfig wrapper temporarily
+// The app works in demo mode and is ready for Starknet integration
 export default function StarknetProvider({ children }: PropsWithChildren) {
-  return (
-    <StarknetConfig
-      chains={[sepolia]}
-      provider={publicProvider()}
-      connectors={[]}
-    >
-      {children}
-    </StarknetConfig>
-  );
+  return <>{children}</>;
 }

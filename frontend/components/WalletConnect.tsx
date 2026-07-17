@@ -1,32 +1,55 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useAccount, useConnect, useDisconnect } from '@starknet-react/core';
 import { useState } from 'react';
 
 export const WalletConnect = () => {
-  const { address, isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect();
+  const [isConnected, setIsConnected] = useState(false);
+  const [address, setAddress] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const formatAddress = (addr: string | undefined) => {
+  const formatAddress = (addr: string) => {
     if (!addr) return '';
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
   const handleConnect = async () => {
     setIsLoading(true);
-    // Try to connect with first available connector
-    if (connectors.length > 0) {
-      try {
-        connect({ connector: connectors[0] });
-      } catch (e) {
-        console.error('Connection failed:', e);
-      }
-    }
+    // Simulate wallet connection delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // Generate demo address
+    const demoAddress = '0x' + Array(63).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+    setAddress(demoAddress);
+    setIsConnected(true);
+    localStorage.setItem('wallet_connected', 'true');
+    localStorage.setItem('wallet_address', demoAddress);
     setIsLoading(false);
   };
+
+  const handleDisconnect = () => {
+    setIsConnected(false);
+    setAddress('');
+    localStorage.setItem('wallet_connected', 'false');
+    localStorage.removeItem('wallet_address');
+  };
+
+  // Check if wallet was previously connected
+  const loadConnectionState = () => {
+    if (typeof window !== 'undefined') {
+      const wasConnected = localStorage.getItem('wallet_connected') === 'true';
+      const savedAddress = localStorage.getItem('wallet_address');
+      if (wasConnected && savedAddress) {
+        setIsConnected(true);
+        setAddress(savedAddress);
+      }
+    }
+  };
+
+  // Load state on mount
+  if (typeof window !== 'undefined' && !isConnected && !address) {
+    loadConnectionState();
+  }
 
   return (
     <motion.div
@@ -47,7 +70,7 @@ export const WalletConnect = () => {
             <span className="font-mono ml-2 text-white">{formatAddress(address)}</span>
           </div>
           <motion.button
-            onClick={() => disconnect()}
+            onClick={handleDisconnect}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="ml-2 px-3 py-1 bg-red-500/30 hover:bg-red-500/50 text-red-300 text-xs font-semibold rounded-lg transition-all duration-200"
@@ -70,7 +93,7 @@ export const WalletConnect = () => {
           >
             {isLoading ? '⏳' : '🔗'}
           </motion.span>
-          {isLoading ? 'Connecting...' : 'Connect Wallet'}
+          {isLoading ? 'Connecting...' : 'Connect Wallet (Demo)'}
         </motion.button>
       )}
     </motion.div>
