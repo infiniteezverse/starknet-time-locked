@@ -4,6 +4,30 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { formatTime, FormattedTime } from '@/lib/timeUtils';
 
+// Particle component for confetti effect
+const Particle = ({ delay, duration }: { delay: number; duration: number }) => (
+  <motion.div
+    initial={{
+      y: -100,
+      x: Math.random() * 200 - 100,
+      opacity: 1,
+      rotate: 0,
+      scale: Math.random() * 1 + 0.5
+    }}
+    animate={{
+      y: 400,
+      x: Math.random() * 400 - 200,
+      opacity: 0,
+      rotate: Math.random() * 360,
+      scale: 0
+    }}
+    transition={{ duration, delay, ease: 'easeIn' }}
+    className="fixed pointer-events-none text-2xl"
+  >
+    {['🎉', '🎊', '✨', '🎈', '🎁', '⭐', '🌟', '💫'][Math.floor(Math.random() * 8)]}
+  </motion.div>
+);
+
 interface CountdownClockProps {
   remainingSeconds: number;
   isExpired: boolean;
@@ -12,10 +36,19 @@ interface CountdownClockProps {
 export const CountdownClock = ({ remainingSeconds, isExpired }: CountdownClockProps) => {
   const [displayTime, setDisplayTime] = useState<FormattedTime>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [syncTime, setSyncTime] = useState(Date.now());
+  const [particles, setParticles] = useState<number[]>([]);
+  const [celebration, setCelebration] = useState(false);
 
   useEffect(() => {
     setSyncTime(Date.now());
     setDisplayTime(formatTime(remainingSeconds));
+
+    // Trigger celebration if actively counting down
+    if (remainingSeconds > 0 && !isExpired) {
+      setCelebration(true);
+      // Generate particles for celebration
+      setParticles(Array.from({ length: 15 }, (_, i) => i));
+    }
   }, [remainingSeconds]);
 
   useEffect(() => {
@@ -42,8 +75,13 @@ export const CountdownClock = ({ remainingSeconds, isExpired }: CountdownClockPr
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="flex flex-col items-center justify-center py-12"
+        className="flex flex-col items-center justify-center py-12 relative"
       >
+        {/* Celebration particles for expiry */}
+        {Array.from({ length: 20 }).map((_, i) => (
+          <Particle key={`expire-${i}`} delay={i * 0.05} duration={2} />
+        ))}
+
         <motion.div
           animate={{ rotate: [0, 360] }}
           transition={{ duration: 2 }}
@@ -62,10 +100,33 @@ export const CountdownClock = ({ remainingSeconds, isExpired }: CountdownClockPr
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.6 }}
-      className="flex flex-col items-center justify-center space-y-6"
+      className="flex flex-col items-center justify-center space-y-6 relative"
     >
+      {/* Celebration particles */}
+      {celebration && particles.map((i) => (
+        <Particle key={`particle-${i}`} delay={i * 0.08} duration={3} />
+      ))}
+      {/* Animated background glow */}
+      <motion.div
+        animate={{
+          scale: [1, 1.1, 1],
+          opacity: [0.3, 0.6, 0.3],
+        }}
+        transition={{ duration: 4, repeat: Infinity }}
+        className="absolute -inset-12 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-3xl -z-10"
+      />
+
       {/* Analog Clock */}
-      <div className="relative w-72 h-72">
+      <motion.div
+        animate={{
+          rotateY: [0, 5, -5, 0],
+        }}
+        transition={{ duration: 4, repeat: Infinity }}
+        className="relative w-72 h-72"
+      >
+        {/* Glow effect behind clock */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-purple-500/30 rounded-full blur-2xl" />
+
         {/* Outer ring with days */}
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 200">
           {/* Background circle */}
@@ -154,6 +215,44 @@ export const CountdownClock = ({ remainingSeconds, isExpired }: CountdownClockPr
           </defs>
         </svg>
 
+        {/* Rotating orbit rings */}
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 20, repeat: Infinity, linear: true }}
+          className="absolute inset-2 border border-blue-500/20 rounded-full"
+        />
+        <motion.div
+          animate={{ rotate: -360 }}
+          transition={{ duration: 30, repeat: Infinity, linear: true }}
+          className="absolute inset-6 border border-purple-500/20 rounded-full"
+        />
+
+        {/* Floating particles around clock */}
+        {[...Array(6)].map((_, i) => (
+          <motion.div
+            key={`orbit-${i}`}
+            animate={{
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: 15 + i * 2,
+              repeat: Infinity,
+              linear: true,
+            }}
+            className="absolute inset-0"
+          >
+            <div
+              className="absolute w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full"
+              style={{
+                top: '50%',
+                left: '50%',
+                marginTop: '-4px',
+                marginLeft: '-100px',
+              }}
+            />
+          </motion.div>
+        ))}
+
         {/* Center label */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <motion.div
@@ -161,25 +260,75 @@ export const CountdownClock = ({ remainingSeconds, isExpired }: CountdownClockPr
             transition={{ duration: 2, repeat: Infinity }}
             className="text-center"
           >
-            <div className="text-3xl font-black text-white">
+            <div className="text-3xl font-black text-white drop-shadow-lg">
               {String(displayTime.hours).padStart(2, '0')}:{String(displayTime.minutes).padStart(2, '0')}
             </div>
             <div className="text-xs text-gray-400 mt-1">Hours:Minutes</div>
           </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Digital Display */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="w-full max-w-sm"
+        className="w-full max-w-sm relative"
       >
-        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border border-white/10">
+        {/* Animated glow behind digital display */}
+        <motion.div
+          animate={{
+            scale: [1, 1.05, 1],
+            opacity: [0.2, 0.4, 0.2],
+          }}
+          transition={{ duration: 3, repeat: Infinity }}
+          className="absolute -inset-2 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-pink-500/30 rounded-2xl blur-xl -z-10"
+        />
+
+        <div className="relative bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 rounded-2xl p-6 border border-white/20 shadow-2xl overflow-hidden">
+          {/* Animated background pattern */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-500" />
+          </div>
           {/* Large Time Display */}
-          <div className="text-center mb-6">
-            <div className="text-6xl font-black font-mono mb-2">
+          <motion.div
+            animate={{
+              scale: [1, 1.02, 1],
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="text-center mb-6 relative z-10"
+          >
+            {/* Floating emojis around time display */}
+            <motion.div
+              animate={{ y: [0, -10, 0], x: [-10, 0, -10] }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="absolute -left-8 top-0 text-2xl"
+            >
+              🎉
+            </motion.div>
+            <motion.div
+              animate={{ y: [0, 10, 0], x: [10, 0, 10] }}
+              transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
+              className="absolute -right-8 top-0 text-2xl"
+            >
+              🎊
+            </motion.div>
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+              className="absolute -left-6 bottom-0 text-xl"
+            >
+              ✨
+            </motion.div>
+            <motion.div
+              animate={{ y: [0, 10, 0] }}
+              transition={{ duration: 2, repeat: Infinity, delay: 1.5 }}
+              className="absolute -right-6 bottom-0 text-xl"
+            >
+              ⭐
+            </motion.div>
+
+            <div className="text-6xl font-black font-mono mb-2 drop-shadow-xl">
               <span className="text-blue-400">{String(displayTime.days).padStart(2, '0')}</span>
               <span className="text-gray-500 mx-1">:</span>
               <span className="text-purple-400">{String(displayTime.hours).padStart(2, '0')}</span>
@@ -194,10 +343,10 @@ export const CountdownClock = ({ remainingSeconds, isExpired }: CountdownClockPr
               <div>Mins</div>
               <div>Secs</div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Progress Ring */}
-          <div className="space-y-3">
+          <div className="space-y-3 relative z-10">
             <div className="flex justify-between items-center text-xs">
               <span className="text-gray-400">Progress</span>
               <motion.span
@@ -219,12 +368,12 @@ export const CountdownClock = ({ remainingSeconds, isExpired }: CountdownClockPr
           </div>
 
           {/* Indicator Lights */}
-          <div className="grid grid-cols-4 gap-3 mt-6">
+          <div className="grid grid-cols-4 gap-3 mt-6 relative z-10">
             <div className="text-center">
               <motion.div
                 animate={{ scale: displayTime.days > 0 ? [1, 1.2, 1] : 1 }}
                 transition={{ duration: 1, repeat: displayTime.days > 0 ? Infinity : 0 }}
-                className={`w-3 h-3 rounded-full mx-auto mb-2 ${displayTime.days > 0 ? 'bg-blue-500' : 'bg-slate-600'}`}
+                className={`w-3 h-3 rounded-full mx-auto mb-2 shadow-lg ${displayTime.days > 0 ? 'bg-blue-500 shadow-blue-500' : 'bg-slate-600'}`}
               />
               <div className="text-xs text-gray-400">{displayTime.days}d</div>
             </div>
@@ -232,7 +381,7 @@ export const CountdownClock = ({ remainingSeconds, isExpired }: CountdownClockPr
               <motion.div
                 animate={{ scale: displayTime.hours > 0 ? [1, 1.2, 1] : 1 }}
                 transition={{ duration: 1, repeat: displayTime.hours > 0 ? Infinity : 0 }}
-                className={`w-3 h-3 rounded-full mx-auto mb-2 ${displayTime.hours > 0 ? 'bg-purple-500' : 'bg-slate-600'}`}
+                className={`w-3 h-3 rounded-full mx-auto mb-2 shadow-lg ${displayTime.hours > 0 ? 'bg-purple-500 shadow-purple-500' : 'bg-slate-600'}`}
               />
               <div className="text-xs text-gray-400">{displayTime.hours}h</div>
             </div>
@@ -240,7 +389,7 @@ export const CountdownClock = ({ remainingSeconds, isExpired }: CountdownClockPr
               <motion.div
                 animate={{ scale: displayTime.minutes > 0 ? [1, 1.2, 1] : 1 }}
                 transition={{ duration: 1, repeat: displayTime.minutes > 0 ? Infinity : 0 }}
-                className={`w-3 h-3 rounded-full mx-auto mb-2 ${displayTime.minutes > 0 ? 'bg-pink-500' : 'bg-slate-600'}`}
+                className={`w-3 h-3 rounded-full mx-auto mb-2 shadow-lg ${displayTime.minutes > 0 ? 'bg-pink-500 shadow-pink-500' : 'bg-slate-600'}`}
               />
               <div className="text-xs text-gray-400">{displayTime.minutes}m</div>
             </div>
@@ -248,7 +397,7 @@ export const CountdownClock = ({ remainingSeconds, isExpired }: CountdownClockPr
               <motion.div
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 1, repeat: Infinity }}
-                className="w-3 h-3 rounded-full mx-auto mb-2 bg-red-500"
+                className="w-3 h-3 rounded-full mx-auto mb-2 bg-red-500 shadow-lg shadow-red-500"
               />
               <div className="text-xs text-gray-400">{displayTime.seconds}s</div>
             </div>
