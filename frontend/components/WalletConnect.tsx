@@ -1,12 +1,13 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export const WalletConnect = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [address, setAddress] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const formatAddress = (addr: string) => {
     if (!addr) return '';
@@ -44,21 +45,20 @@ export const WalletConnect = () => {
     window.dispatchEvent(new CustomEvent('walletDisconnected'));
   };
 
-  // Check if wallet was previously connected
-  const loadConnectionState = () => {
-    if (typeof window !== 'undefined') {
-      const wasConnected = localStorage.getItem('wallet_connected') === 'true';
-      const savedAddress = localStorage.getItem('wallet_address');
-      if (wasConnected && savedAddress) {
-        setIsConnected(true);
-        setAddress(savedAddress);
-      }
+  useEffect(() => {
+    setIsHydrated(true);
+    const wasConnected = localStorage.getItem('wallet_connected') === 'true';
+    const savedAddress = localStorage.getItem('wallet_address');
+    if (wasConnected && savedAddress) {
+      setIsConnected(true);
+      setAddress(savedAddress);
     }
-  };
+  }, []);
 
-  // Load state on mount
-  if (typeof window !== 'undefined' && !isConnected && !address) {
-    loadConnectionState();
+  if (!isHydrated) {
+    return (
+      <div className="w-32 h-10" />
+    );
   }
 
   return (
