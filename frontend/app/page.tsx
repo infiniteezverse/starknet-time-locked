@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CountdownTimer } from '@/components/CountdownTimer';
+import { CountdownClock } from '@/components/CountdownClock';
 import { StatusBadge } from '@/components/StatusBadge';
 import { MetadataCard } from '@/components/MetadataCard';
 import { DeadlineInput } from '@/components/DeadlineInput';
@@ -166,13 +166,13 @@ export default function Home() {
           >
             {/* Left Column - Countdown & Status */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Countdown Timer */}
+              {/* Countdown Clock */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <CountdownTimer remainingSeconds={remainingTime} isExpired={isExpired} />
+                <CountdownClock remainingSeconds={remainingTime} isExpired={isExpired} />
               </motion.div>
 
               {/* Status Badge */}
