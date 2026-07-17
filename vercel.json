@@ -1,0 +1,17 @@
+{
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/.next",
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_CONTRACT_ADDRESS": {
+      "description": "Deployed TimeRegistry contract address on Starknet Sepolia",
+      "required": false,
+      "default": "0x0"
+    },
+    "NEXT_PUBLIC_NETWORK": {
+      "description": "Starknet network (SN_SEPOLIA or SN_MAINNET)",
+      "required": false,
+      "default": "SN_SEPOLIA"
+    }
+  }
+}
