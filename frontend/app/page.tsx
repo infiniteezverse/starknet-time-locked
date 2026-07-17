@@ -11,24 +11,55 @@ import { useTimeRegistry } from '@/hooks/useTimeRegistry';
 
 export default function Home() {
   const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [totalSeconds, setTotalSeconds] = useState(0);
   const { remainingTime, deadline, isExpired, setDeadline, isWritePending } = useTimeRegistry();
 
   // Check wallet connection state from localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const connected = localStorage.getItem('wallet_connected') === 'true';
-      setIsConnected(connected);
+    // Initial check
+    const checkConnection = () => {
+      if (typeof window !== 'undefined') {
+        const connected = localStorage.getItem('wallet_connected') === 'true';
+        setIsConnected(connected);
+        setIsLoading(false);
+      }
+    };
 
-      // Listen for storage changes (wallet connect/disconnect)
-      const handleStorageChange = () => {
-        const newConnected = localStorage.getItem('wallet_connected') === 'true';
+    checkConnection();
+
+    // Poll for connection changes every 300ms (in case of rapid updates)
+    const interval = setInterval(checkConnection, 300);
+
+    // Listen for storage changes (wallet connect/disconnect)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'wallet_connected') {
+        const newConnected = e.newValue === 'true';
         setIsConnected(newConnected);
-      };
+      }
+    };
 
-      window.addEventListener('storage', handleStorageChange);
-      return () => window.removeEventListener('storage', handleStorageChange);
-    }
+    // Listen for custom wallet connection event
+    const handleWalletConnected = () => {
+      setIsConnected(true);
+      setIsLoading(false);
+    };
+
+    const handleWalletDisconnected = () => {
+      setIsConnected(false);
+      setIsLoading(false);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('walletConnected', handleWalletConnected);
+    window.addEventListener('walletDisconnected', handleWalletDisconnected);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('walletConnected', handleWalletConnected);
+      window.removeEventListener('walletDisconnected', handleWalletDisconnected);
+    };
   }, []);
 
   useEffect(() => {

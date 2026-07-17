@@ -24,6 +24,12 @@ export const WalletConnect = () => {
     setIsConnected(true);
     localStorage.setItem('wallet_connected', 'true');
     localStorage.setItem('wallet_address', demoAddress);
+
+    // Trigger a storage event to notify other components
+    window.dispatchEvent(new Event('storage'));
+    // Also trigger a custom event
+    window.dispatchEvent(new CustomEvent('walletConnected', { detail: { address: demoAddress } }));
+
     setIsLoading(false);
   };
 
@@ -32,6 +38,10 @@ export const WalletConnect = () => {
     setAddress('');
     localStorage.setItem('wallet_connected', 'false');
     localStorage.removeItem('wallet_address');
+
+    // Trigger disconnect event
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new CustomEvent('walletDisconnected'));
   };
 
   // Check if wallet was previously connected
