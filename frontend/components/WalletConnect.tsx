@@ -2,12 +2,13 @@
 
 import { motion } from 'framer-motion';
 import { useAccount, useConnect, useDisconnect } from '@starknet-react/core';
-import { useStarknetkitConnectModal } from 'starknetkit';
+import { useState } from 'react';
 
 export const WalletConnect = () => {
   const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
-  const { starknetkitConnectModal } = useStarknetkitConnectModal();
+  const [isLoading, setIsLoading] = useState(false);
 
   const formatAddress = (addr: string | undefined) => {
     if (!addr) return '';
@@ -15,8 +16,16 @@ export const WalletConnect = () => {
   };
 
   const handleConnect = async () => {
-    const { wallet } = await starknetkitConnectModal();
-    if (!wallet) return;
+    setIsLoading(true);
+    // Try to connect with first available connector
+    if (connectors.length > 0) {
+      try {
+        connect({ connector: connectors[0] });
+      } catch (e) {
+        console.error('Connection failed:', e);
+      }
+    }
+    setIsLoading(false);
   };
 
   return (
@@ -49,18 +58,19 @@ export const WalletConnect = () => {
       ) : (
         <motion.button
           onClick={handleConnect}
+          disabled={isLoading}
           whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' }}
           whileTap={{ scale: 0.95 }}
-          className="px-6 py-2.5 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 hover:from-blue-600 hover:via-purple-600 hover:to-blue-600 text-white font-bold rounded-lg transition-all duration-300 flex items-center gap-2 shadow-lg"
+          className="px-6 py-2.5 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 hover:from-blue-600 hover:via-purple-600 hover:to-blue-600 disabled:from-gray-600 disabled:via-gray-700 disabled:to-gray-600 text-white font-bold rounded-lg transition-all duration-300 flex items-center gap-2 shadow-lg"
         >
           <motion.span
             animate={{ rotate: [0, 10, -10, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
             className="text-lg"
           >
-            🔗
+            {isLoading ? '⏳' : '🔗'}
           </motion.span>
-          Connect Wallet
+          {isLoading ? 'Connecting...' : 'Connect Wallet'}
         </motion.button>
       )}
     </motion.div>
