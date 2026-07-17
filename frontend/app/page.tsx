@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAccount } from '@starknet-react/core';
 import { motion } from 'framer-motion';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -11,9 +10,18 @@ import { WalletConnect } from '@/components/WalletConnect';
 import { useTimeRegistry } from '@/hooks/useTimeRegistry';
 
 export default function Home() {
-  const { isConnected } = useAccount();
+  const [isConnected, setIsConnected] = useState(false);
   const [totalSeconds, setTotalSeconds] = useState(0);
   const { remainingTime, deadline, isExpired, setDeadline, isWritePending } = useTimeRegistry();
+
+  // Watch for wallet connection changes
+  useEffect(() => {
+    const checkConnection = () => {
+      const connected = localStorage.getItem('demo_connected') === 'true';
+      setIsConnected(connected);
+    };
+    checkConnection();
+  }, []);
 
   useEffect(() => {
     if (Number(deadline) > 0) {

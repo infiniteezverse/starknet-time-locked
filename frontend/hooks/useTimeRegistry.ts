@@ -1,74 +1,55 @@
-import { useContractRead, useContractWrite } from '@starknet-react/core';
 import { CONTRACT_ADDRESS, TIME_REGISTRY_ABI } from '@/lib/constants';
 import { useState, useEffect } from 'react';
 
+// Demo hook that simulates contract interaction
+// In production, replace with actual starknet-react calls
 export const useTimeRegistry = (refetch?: boolean) => {
   const [remainingTime, setRemainingTime] = useState<number>(0);
   const [deadline, setDeadline] = useState<bigint>(0n);
   const [isExpired, setIsExpired] = useState<boolean>(false);
+  const [isWritePending, setIsWritePending] = useState(false);
 
-  const { data: deadlineData, isLoading: isLoadingDeadline, refetch: refetchDeadline } = useContractRead({
-    address: CONTRACT_ADDRESS,
-    functionName: 'get_my_deadline',
-    abi: TIME_REGISTRY_ABI,
-    watch: true,
-  });
-
-  const { data: remainingTimeData, isLoading: isLoadingRemaining, refetch: refetchRemaining } = useContractRead({
-    address: CONTRACT_ADDRESS,
-    functionName: 'get_my_remaining_time',
-    abi: TIME_REGISTRY_ABI,
-    watch: true,
-  });
-
-  const { data: isExpiredData, isLoading: isLoadingExpired, refetch: refetchExpired } = useContractRead({
-    address: CONTRACT_ADDRESS,
-    functionName: 'is_my_deadline_expired',
-    abi: TIME_REGISTRY_ABI,
-    watch: true,
-  });
-
-  const { write: setDeadlineWrite, isPending: isWritePending } = useContractWrite({
-    calls: [],
-  });
-
+  // Simulate reading deadline from contract storage
   useEffect(() => {
-    if (deadlineData) {
-      const deadlineNum = typeof deadlineData === 'bigint' ? deadlineData : BigInt(deadlineData as any);
-      setDeadline(deadlineNum);
+    // In production: call get_my_deadline from contract
+    const storedDeadline = localStorage.getItem('demo_deadline');
+    if (storedDeadline) {
+      setDeadline(BigInt(storedDeadline));
     }
-  }, [deadlineData]);
+  }, [refetch]);
 
+  // Update remaining time every second
   useEffect(() => {
-    if (remainingTimeData) {
-      const remaining = typeof remainingTimeData === 'bigint' ? remainingTimeData : BigInt(remainingTimeData as any);
-      setRemainingTime(Number(remaining));
-    }
-  }, [remainingTimeData]);
+    const interval = setInterval(() => {
+      if (Number(deadline) > 0) {
+        const now = Math.floor(Date.now() / 1000);
+        const remaining = Math.max(0, Number(deadline) - now);
+        setRemainingTime(remaining);
+        setIsExpired(remaining === 0);
+      }
+    }, 1000);
 
-  useEffect(() => {
-    if (isExpiredData) {
-      setIsExpired(Boolean(isExpiredData));
-    }
-  }, [isExpiredData]);
-
-  useEffect(() => {
-    if (refetch) {
-      refetchDeadline();
-      refetchRemaining();
-      refetchExpired();
-    }
-  }, [refetch, refetchDeadline, refetchRemaining, refetchExpired]);
+    return () => clearInterval(interval);
+  }, [deadline]);
 
   const handleSetDeadline = async (days: number, hours: number) => {
     try {
-      setDeadlineWrite({
-        contractAddress: CONTRACT_ADDRESS,
-        entrypoint: 'set_deadline',
-        calldata: [days.toString(), hours.toString()],
-      });
+      setIsWritePending(true);
+      const now = Math.floor(Date.now() / 1000);
+      const futureDeadline = now + (days * 86400) + (hours * 3600);
+
+      // Simulate contract call
+      // In production: call set_deadline(days, hours) on contract
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      setDeadline(BigInt(futureDeadline));
+      localStorage.setItem('demo_deadline', futureDeadline.toString());
+
+      setIsWritePending(false);
+      console.log(`Set deadline: ${days} days, ${hours} hours (Unix: ${futureDeadline})`);
     } catch (error) {
       console.error('Error setting deadline:', error);
+      setIsWritePending(false);
     }
   };
 
@@ -76,13 +57,11 @@ export const useTimeRegistry = (refetch?: boolean) => {
     remainingTime,
     deadline,
     isExpired,
-    isLoading: isLoadingDeadline || isLoadingRemaining || isLoadingExpired,
+    isLoading: false,
     isWritePending,
     setDeadline: handleSetDeadline,
     refetch: () => {
-      refetchDeadline();
-      refetchRemaining();
-      refetchExpired();
+      // No-op in demo mode
     },
   };
 };
